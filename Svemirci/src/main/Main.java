@@ -25,6 +25,9 @@ public class Main extends Application {
     public static final int ENEMIES_IN_A_ROW = 6;
     public static final int ENEMIES_IN_A_COLUMN = 3;
 
+    public static final int POINTS_PER_ENEMY = 2;
+    public static final int POINTS_PER_COIN = 1;
+
     private Background background;
     private Player player;
     private List<Enemy> enemies;
@@ -36,19 +39,35 @@ public class Main extends Application {
     private Group root;
     private double time = 0;
     private boolean theEnd = false;
-    Text text = new Text("Test");
+    
+    private int score = 0;
+    
+    Text timeText = new Text("Test");
+    Text scoreText = new Text("Score: 0");
 
     @Override
     public void start(Stage primaryStage) {
         enemies = new LinkedList<>();
         root = new Group();
         camera = new Camera();
-        text.setFill(Color.RED);
-        text.setTranslateX(WINDOW_WIDTH / 2);
-        text.setTranslateY(WINDOW_HEIGHT / 10);
-        text.setTextAlignment(TextAlignment.CENTER);
+        timeText.setFill(Color.RED);
+        timeText.setTextAlignment(TextAlignment.CENTER);
+        timeText.setTranslateX(WINDOW_WIDTH / 2);
+        timeText.setTranslateY(WINDOW_HEIGHT / 11);
+        timeText.setTextAlignment(TextAlignment.CENTER);
+        timeText.setScaleX(2);
+        timeText.setScaleY(2);
+
+        scoreText.setFill(Color.RED);
+        scoreText.setTextAlignment(TextAlignment.RIGHT);
+        scoreText.setTranslateX(WINDOW_WIDTH - 60);
+        scoreText.setTranslateY(20);
+        scoreText.setTextAlignment(TextAlignment.CENTER);
+        scoreText.setScaleX(1.2);
+        scoreText.setScaleY(1.2);
+
         background = new Background(WINDOW_WIDTH, WINDOW_HEIGHT);
-        root.getChildren().addAll(background, text);
+        root.getChildren().addAll(background, timeText, scoreText);
 
         player = new Player(camera);
         player.setTranslateX(WINDOW_WIDTH / 2);
@@ -81,7 +100,7 @@ public class Main extends Application {
             @Override
             public void handle(long currentNanoTime) {
                 if (!theEnd) {
-                    text.setText("Time: " + (currentNanoTime - start) / 1000000000);
+                    timeText.setText("Time: " + (currentNanoTime - start) / 1000000000);
                 }
                 update();
             }
@@ -105,6 +124,8 @@ public class Main extends Application {
                     if (currentShot.getBoundsInParent().intersects(currentEnemy.getBoundsInParent())) {
                         shots.remove(currentShot);
                         enemies.remove(currentEnemy);
+                        score+= POINTS_PER_ENEMY;
+                        scoreText.setText("Score: " + score);
                         break;
                     }
 

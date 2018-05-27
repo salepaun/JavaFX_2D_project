@@ -16,6 +16,7 @@ import sprites.Background;
 import sprites.Enemy;
 import sprites.Player;
 import sprites.Shot;
+import sprites.StarField;
 
 public class Main extends Application {
 
@@ -37,13 +38,16 @@ public class Main extends Application {
     public Camera camera;
 
     private Group root;
+
+    private StarField starField;
     private double time = 0;
     private boolean theEnd = false;
-    
+
     private int score = 0;
-    
+
     Text timeText = new Text("Test");
     Text scoreText = new Text("Score: 0");
+    Text gameOverText = new Text();
 
     @Override
     public void start(Stage primaryStage) {
@@ -66,8 +70,20 @@ public class Main extends Application {
         scoreText.setScaleX(1.2);
         scoreText.setScaleY(1.2);
 
+        gameOverText.setFill(Color.RED);
+        gameOverText.setTextAlignment(TextAlignment.RIGHT);
+        gameOverText.setTranslateX(WINDOW_WIDTH / 2);
+        gameOverText.setTranslateY(WINDOW_HEIGHT / 2);
+        gameOverText.setTextAlignment(TextAlignment.CENTER);
+        gameOverText.setScaleX(3);
+        gameOverText.setScaleY(3);
+        
+
         background = new Background(WINDOW_WIDTH, WINDOW_HEIGHT);
-        root.getChildren().addAll(background, timeText, scoreText);
+        starField = new StarField();
+        starField.setTranslateX(WINDOW_WIDTH / 2);
+        starField.setTranslateY(WINDOW_HEIGHT / 2);
+        root.getChildren().addAll(background, starField, timeText, scoreText,gameOverText);
 
         player = new Player(camera);
         player.setTranslateX(WINDOW_WIDTH / 2);
@@ -109,6 +125,7 @@ public class Main extends Application {
 
     public void update() {
         if (theEnd == false) {
+            starField.update();
             shots = player.getShots();
 
             for (int i = 0; i < shots.size(); i++) {
@@ -124,7 +141,7 @@ public class Main extends Application {
                     if (currentShot.getBoundsInParent().intersects(currentEnemy.getBoundsInParent())) {
                         shots.remove(currentShot);
                         enemies.remove(currentEnemy);
-                        score+= POINTS_PER_ENEMY;
+                        score += POINTS_PER_ENEMY;
                         scoreText.setText("Score: " + score);
                         break;
                     }
@@ -154,6 +171,8 @@ public class Main extends Application {
             player.update();
 
             time += 1.0 / 60;
+        } else {
+            gameOverText.setText("Game Over!");
         }
     }
 

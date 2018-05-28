@@ -1,19 +1,26 @@
 package main;
 
 import cameras.Camera;
+import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 import javafx.animation.AnimationTimer;
+import javafx.animation.RotateTransition;
 import javafx.application.Application;
 import static javafx.application.Application.launch;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import sprites.Background;
+import sprites.Coin;
 import sprites.Enemy;
+import sprites.EnemyShot;
 import sprites.Player;
 import sprites.Shot;
 import sprites.StarField;
@@ -29,11 +36,20 @@ public class Main extends Application {
     public static final int POINTS_PER_ENEMY = 2;
     public static final int POINTS_PER_COIN = 1;
 
+    public static final int ENEMY_FIRE_RATE = 2;
+
     private Background background;
     private Player player;
     private List<Enemy> enemies;
     private List<Shot> shots;
+    private List<EnemyShot> enemyShots;
+    private List<Coin> coins;
+
+
     private long start;
+    private long nextFire;
+
+    private Random random;
 
     public Camera camera;
 
@@ -51,9 +67,11 @@ public class Main extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        enemies = new LinkedList<>();
+        random = new Random();
+        coins = new ArrayList<>();
         root = new Group();
         camera = new Camera();
+        enemies = new ArrayList<>();
         timeText.setFill(Color.RED);
         timeText.setTextAlignment(TextAlignment.CENTER);
         timeText.setTranslateX(WINDOW_WIDTH / 2);
@@ -77,13 +95,12 @@ public class Main extends Application {
         gameOverText.setTextAlignment(TextAlignment.CENTER);
         gameOverText.setScaleX(3);
         gameOverText.setScaleY(3);
-        
 
         background = new Background(WINDOW_WIDTH, WINDOW_HEIGHT);
         starField = new StarField();
         starField.setTranslateX(WINDOW_WIDTH / 2);
         starField.setTranslateY(WINDOW_HEIGHT / 2);
-        root.getChildren().addAll(background, starField, timeText, scoreText,gameOverText);
+        root.getChildren().addAll(background, starField);
 
         player = new Player(camera);
         player.setTranslateX(WINDOW_WIDTH / 2);
@@ -93,7 +110,7 @@ public class Main extends Application {
 
         for (int i = 0; i < ENEMIES_IN_A_COLUMN; i++) {
             for (int j = 0; j < ENEMIES_IN_A_ROW; j++) {
-                Enemy enemy = new Enemy(i + j);
+                Enemy enemy = new Enemy(i + j, coins);
                 enemy.setTranslateX((j + 1) * WINDOW_WIDTH / (ENEMIES_IN_A_ROW + 1));
                 enemy.setTranslateY((i + 1) * 100);
                 camera.getChildren().add(enemy);
@@ -101,7 +118,8 @@ public class Main extends Application {
             }
         }
 
-        root.getChildren().add(camera);
+        root.getChildren().addAll(camera, timeText, scoreText, gameOverText);
+
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT);
         scene.setOnKeyPressed(player);
         scene.setOnKeyReleased(player);
@@ -111,14 +129,31 @@ public class Main extends Application {
         primaryStage.setResizable(false);
         primaryStage.show();
         start = System.nanoTime();
+        nextFire = start + (long) (random.nextDouble() * (ENEMY_FIRE_RATE + 1) * 1000000000);
 
         new AnimationTimer() {
             @Override
             public void handle(long currentNanoTime) {
                 if (!theEnd) {
+                    if (currentNanoTime >= nextFire) {
+                        RandomEnemyFire();
+                        nextFire = currentNanoTime + (long) (random.nextDouble() * (ENEMY_FIRE_RATE + 1) * 1000000000);
+                    }
                     timeText.setText("Time: " + (currentNanoTime - start) / 1000000000);
+                    scoreText.setText("Score: " + score);
                 }
                 update();
+            }
+
+            private void RandomEnemyFire() {
+                if (enemies.size() > 0) {
+                    int enemyIndex = random.nextInt(enemies.size());
+                    Enemy enemy = enemies.get(enemyIndex);
+                    EnemyShot shot = new EnemyShot();
+                    shot.setTranslateX(enemy.getTranslateX() + 30);
+                    shot.setTranslateY(enemy.getTranslateY() + 15);
+                    enemyShots.add(shot);
+                }
             }
         }.start();
     }
@@ -127,7 +162,7 @@ public class Main extends Application {
         if (theEnd == false) {
             starField.update();
             shots = player.getShots();
-
+            enemyShots = Enemy.getShots();
             for (int i = 0; i < shots.size(); i++) {
                 Shot currentShot = shots.get(i);
 
@@ -138,41 +173,98 @@ public class Main extends Application {
 
                 for (int j = 0; j < enemies.size(); j++) {
                     Enemy currentEnemy = enemies.get(j);
+
+                    if (currentEnemy.IsDead()) {
+                        continue;
+                    }
                     if (currentShot.getBoundsInParent().intersects(currentEnemy.getBoundsInParent())) {
                         shots.remove(currentShot);
-                        enemies.remove(currentEnemy);
+                        currentEnemy.DeathAnimation(enemies);
                         score += POINTS_PER_ENEMY;
-                        scoreText.setText("Score: " + score);
                         break;
                     }
 
                 }
             }
-            for (Enemy enemy : enemies) {
 
+            for (int i = 0; i < enemyShots.size(); i++) {
+                EnemyShot currentShot = enemyShots.get(i);
+
+                if (currentShot.getTranslateY() > WINDOW_HEIGHT) {
+                    enemyShots.remove(currentShot);
+                    continue;
+                }
+
+                if (currentShot.getBoundsInParent().intersects(player.getBoundsInParent())) {
+                    theEnd = true;
+                    gameOverText.setText("Game Over!");
+                    enemyShots.remove(currentShot);
+                    player.DeathAnimation();
+                    break;
+                }
+            }
+
+            for (Enemy enemy : enemies) {
+                if (enemy.IsDead()) {
+                    continue;
+                }
                 if (enemy.getBoundsInParent().intersects(player.getBoundsInParent())) {
                     theEnd = true;
+                    
+                    gameOverText.setText("Game Over!");
+                    player.DeathAnimation();
+                    break;
+                }
+            }
+
+            for (int i = 0; i < coins.size(); i++) {
+                Coin coin = coins.get(i);
+                if (!coin.IsVisible()) {
+                    coins.remove(coin);
+                }
+                if (coin.getBoundsInParent().intersects(player.getBoundsInParent())) {
+                    score += POINTS_PER_COIN;
+                    coins.remove(coin);
                     break;
                 }
             }
 
             camera.getChildren().clear();
-            camera.getChildren().add(player);
 
-            if (enemies.isEmpty()) {
+            if (!player.IsDead()) {
+                camera.getChildren().add(player);
+            }
+
+            if (enemies.isEmpty() && coins.isEmpty()) {
                 theEnd = true;
+                gameOverText.setText("You Won!");
             } else {
-                camera.getChildren().addAll(shots);
                 shots.forEach(e -> e.update());
+                coins.forEach(e -> e.update());
+                enemyShots.forEach(e -> e.update());
+                enemies.forEach(e -> e.updateDir());
+                if (Enemy.changeDir) {
+                    Enemy.changeDir = false;
+                    Enemy.speed = -Enemy.speed;
+                }
+                enemies.forEach(e -> e.update());
+                
                 camera.getChildren().addAll(enemies);
+                camera.getChildren().addAll(shots);
+                camera.getChildren().addAll(coins);
+                camera.getChildren().addAll(enemyShots);
             }
 
             player.setShots(shots);
             player.update();
+            camera.update(player);
 
             time += 1.0 / 60;
         } else {
-            gameOverText.setText("Game Over!");
+            
+            if (player.IsDead()) {
+                camera.getChildren().remove(player);
+            }
         }
     }
 

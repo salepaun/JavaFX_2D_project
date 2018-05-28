@@ -4,8 +4,10 @@ import cameras.Camera;
 import com.sun.prism.ps.Shader;
 import java.util.LinkedList;
 import java.util.List;
+import javafx.animation.RotateTransition;
 import javafx.event.EventHandler;
 import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
@@ -14,6 +16,7 @@ import javafx.scene.shape.ArcType;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape;
+import javafx.util.Duration;
 import main.Main;
 
 public class Player extends Sprite implements EventHandler<KeyEvent> {
@@ -27,18 +30,22 @@ public class Player extends Sprite implements EventHandler<KeyEvent> {
 
     private double velocityHorizontal = 0;
     private double velocityVertical = 0;
-    
+
     private States state = States.STALL;
 
     private Rectangle body;
     private Rectangle gun;
+    private Thruster left;
+    private Thruster right;
 
     private Camera camera;
-    
+
     boolean upPressed = false;
     boolean downPressed = false;
     boolean rightPressed = false;
     boolean leftPressed = false;
+
+    private boolean isDead = false;
 
     public Player(Camera cam) {
         camera = cam;
@@ -69,45 +76,34 @@ public class Player extends Sprite implements EventHandler<KeyEvent> {
         a2.setTranslateY(-10);
         a2.setFill(Color.BLACK);
 
-        getChildren().addAll(e1, a1, a2);
+        left = new Thruster();
+        right = new Thruster();
+        left.setTranslateX(-11 - Thruster.width);
+        left.setTranslateY(-3);
+
+        right.setTranslateX(11);
+        right.setTranslateY(-3);
+
+        getChildren().addAll(left, right, e1, a1, a2);
     }
 
     private void setVelocity() {
-        /*switch (state) {
-            case STALL:
-                velocityHorizontal = 0;
-                velocityVertical = 0;
-                break;
-            case HORIZONTAL_RELEASE:
-                velocityHorizontal = 0;
-                break;
-            case VERTICAL_RELEASE:
-                velocityVertical = 0;
-                break;
-            case RIGHT:
-                velocityHorizontal = PLAYER_VELOCITY;
-                break;
-            case LEFT:
-                velocityHorizontal = -PLAYER_VELOCITY;
-                break;
-            case UP:
-                velocityVertical = -PLAYER_VELOCITY;
-                break;
-            case DOWN:
-                velocityVertical = +PLAYER_VELOCITY;
-                break;
-            default:
-                break;
-        }*/
-        
         velocityHorizontal = 0;
         velocityVertical = 0;
-        
-        if(upPressed) velocityVertical-=PLAYER_VELOCITY;
-        if(downPressed) velocityVertical+=PLAYER_VELOCITY;
-        if(leftPressed) velocityHorizontal-=PLAYER_VELOCITY;
-        if(rightPressed) velocityHorizontal+=PLAYER_VELOCITY;
-        
+
+        if (upPressed) {
+            velocityVertical -= PLAYER_VELOCITY;
+        }
+        if (downPressed) {
+            velocityVertical += PLAYER_VELOCITY;
+        }
+        if (leftPressed) {
+            velocityHorizontal -= PLAYER_VELOCITY;
+        }
+        if (rightPressed) {
+            velocityHorizontal += PLAYER_VELOCITY;
+        }
+
     }
 
     public List<Shot> getShots() {
@@ -134,14 +130,15 @@ public class Player extends Sprite implements EventHandler<KeyEvent> {
         } else {
             setTranslateX(getTranslateX() + velocityHorizontal);
         }
-        
-        if (getTranslateY() + velocityVertical < body.getHeight()/ 2 + 5) {
-            setTranslateY(body.getHeight()/ 2 + 5);
-        } else if (getTranslateY() + velocityVertical > Main.WINDOW_HEIGHT - body.getHeight()/ 2 - 5) {
-            setTranslateY(Main.WINDOW_HEIGHT - body.getHeight()/ 2 - 5);
+
+        if (getTranslateY() + velocityVertical < body.getHeight() / 2 + 5) {
+            setTranslateY(body.getHeight() / 2 + 5);
+        } else if (getTranslateY() + velocityVertical > Main.WINDOW_HEIGHT - body.getHeight() / 2 - 5) {
+            setTranslateY(Main.WINDOW_HEIGHT - body.getHeight() / 2 - 5);
         } else {
             setTranslateY(getTranslateY() + velocityVertical);
         }
+
     }
 
     @Override
@@ -185,6 +182,22 @@ public class Player extends Sprite implements EventHandler<KeyEvent> {
         } else if ((event.getCode() == KeyCode.DIGIT2) && (event.getEventType() == KeyEvent.KEY_PRESSED)) {
             camera.setFixed(this);
         }
+    }
+
+    public void DeathAnimation() {
+        RotateTransition rotateTransition = new RotateTransition(Duration.seconds(1), this);
+
+        rotateTransition.setFromAngle(0);
+        rotateTransition.setToAngle(360);
+
+        rotateTransition.setOnFinished((event) -> {
+            isDead = true;
+        });
+        rotateTransition.play();
+    }
+
+    public boolean IsDead() {
+        return isDead;
     }
 
 }

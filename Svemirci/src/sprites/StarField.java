@@ -15,7 +15,7 @@ import javafx.util.Duration;
 
 public class StarField extends Sprite {
 
-    public static int MAX_STAR_NUM = 40;
+    public static int MAX_STAR_NUM = 50;
 
     private List<Star> stars;
 

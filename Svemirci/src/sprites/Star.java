@@ -24,7 +24,8 @@ public class Star extends Sprite {
     private int y;
     private int z;
     private double radius;
-
+    private int speed = 10;
+    
     private Circle circle;
 
     private Random r = new Random();
@@ -73,7 +74,8 @@ public class Star extends Sprite {
 
     @Override
     public void update() {
-        z -= 10;
+        z -= speed;
+        
         if (z < 1) {
             z = Main.WINDOW_WIDTH;
             x = r.nextInt(Main.WINDOW_WIDTH) - Main.WINDOW_WIDTH / 2;

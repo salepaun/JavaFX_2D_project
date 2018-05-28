@@ -45,7 +45,6 @@ public class Main extends Application {
     private List<EnemyShot> enemyShots;
     private List<Coin> coins;
 
-
     private long start;
     private long nextFire;
 
@@ -210,7 +209,7 @@ public class Main extends Application {
                 }
                 if (enemy.getBoundsInParent().intersects(player.getBoundsInParent())) {
                     theEnd = true;
-                    
+
                     gameOverText.setText("Game Over!");
                     player.DeathAnimation();
                     break;
@@ -235,7 +234,7 @@ public class Main extends Application {
                 camera.getChildren().add(player);
             }
 
-            if (enemies.isEmpty() && coins.isEmpty()) {
+            if (enemies.isEmpty() && coins.isEmpty() && shots.isEmpty() && enemyShots.isEmpty()) {
                 theEnd = true;
                 gameOverText.setText("You Won!");
             } else {
@@ -248,7 +247,7 @@ public class Main extends Application {
                     Enemy.speed = -Enemy.speed;
                 }
                 enemies.forEach(e -> e.update());
-                
+
                 camera.getChildren().addAll(enemies);
                 camera.getChildren().addAll(shots);
                 camera.getChildren().addAll(coins);
@@ -261,7 +260,7 @@ public class Main extends Application {
 
             time += 1.0 / 60;
         } else {
-            
+
             if (player.IsDead()) {
                 camera.getChildren().remove(player);
             }
